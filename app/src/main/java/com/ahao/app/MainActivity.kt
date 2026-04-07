@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
 fun UpgraderTestScreen(
     context: android.content.Context,
     modifier: Modifier = Modifier,
-    lifecycleScope: androidx.lifecycle.LifecycleScope
+    lifecycleScope: androidx.lifecycle.LifecycleCoroutineScope
 ) {
     var baseUrl by remember { mutableStateOf(Constants.DEFAULT_BASE_URL) }
     var accessToken by remember { mutableStateOf(Constants.ACCESS_TOKEN) }
