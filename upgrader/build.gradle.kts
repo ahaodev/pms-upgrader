@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     kotlin("plugin.serialization")
+    `maven-publish`
 }
 
 android {
@@ -31,6 +32,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 kotlin {
@@ -50,4 +57,17 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components["release"])
+                groupId = "com.github.YOUR_GITHUB_USERNAME"
+                artifactId = "upgrader"
+                version = "1.0.0"
+            }
+        }
+    }
 }

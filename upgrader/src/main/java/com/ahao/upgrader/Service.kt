@@ -9,22 +9,26 @@ import retrofit2.Retrofit
 
 object Service {
 
-    private fun createOkHttpClient(): OkHttpClient {
+    private fun createOkHttpClient(accessToken: String): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        val trustedHostnames = Constants.TRUSTED_HOSTNAMES
 
         return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("x-access-token", accessToken)
+                    .build()
+                chain.proceed(request)
+            }
             .addInterceptor(loggingInterceptor)
-            .hostnameVerifier { hostname, session -> trustedHostnames.containsAll(trustedHostnames) }
             .connectTimeout(Constants.CONNECTION_TIMEOUT, Constants.TIMEOUT_UNIT)
             .readTimeout(Constants.READ_TIMEOUT, Constants.TIMEOUT_UNIT)
             .writeTimeout(Constants.WRITE_TIMEOUT, Constants.TIMEOUT_UNIT)
             .build()
     }
 
-    fun createUpdateApi(baseUrl: String): ServiceApi {
+    fun createUpdateApi(baseUrl: String, accessToken: String): ServiceApi {
         val json = Json {
             ignoreUnknownKeys = true
             coerceInputValues = true
@@ -32,7 +36,7 @@ object Service {
 
         return Retrofit.Builder()
             .baseUrl(baseUrl)
-            .client(createOkHttpClient())
+            .client(createOkHttpClient(accessToken))
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(ServiceApi::class.java)

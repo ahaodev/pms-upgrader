@@ -15,7 +15,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.ahao.app.ui.theme.PmsupgraderTheme
-import com.ahao.upgrader.Constants
 import com.ahao.upgrader.Upgrader
 import com.ahao.upgrader.UpdateState
 import kotlinx.coroutines.launch
@@ -45,8 +44,8 @@ fun UpgraderTestScreen(
     modifier: Modifier = Modifier,
     lifecycleScope: androidx.lifecycle.LifecycleCoroutineScope
 ) {
-    var baseUrl by remember { mutableStateOf(Constants.DEFAULT_BASE_URL) }
-    var accessToken by remember { mutableStateOf(Constants.ACCESS_TOKEN) }
+    var baseUrl by remember { mutableStateOf("") }
+    var accessToken by remember { mutableStateOf("") }
     var projectName by remember { mutableStateOf("msc") }
     var packageName by remember { mutableStateOf("com.ahao.upgrader") }
     var currentVersion by remember { mutableStateOf("1.0") }
@@ -58,9 +57,6 @@ fun UpgraderTestScreen(
     var isLoading by remember { mutableStateOf(false) }
     var resultMessage by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        upgrader = Upgrader(context, Constants.DEFAULT_BASE_URL)
-    }
 
     Column(
         modifier = modifier
@@ -134,8 +130,13 @@ fun UpgraderTestScreen(
                 resultMessage = "正在检查更新..."
                 lifecycleScope.launch {
                     try {
-                        val newUpgrader = Upgrader(context, baseUrl)
-                        newUpgrader.checkUpdate(currentVersion, projectName)
+                        val newUpgrader = Upgrader.Builder(context)
+                            .accessToken(accessToken)
+                            .baseUrl(baseUrl)
+                            .project(projectName)
+                            .packageName(packageName)
+                            .build()
+                        newUpgrader.checkUpdate(currentVersion)
                         
                         val state = newUpgrader.updateState.value
                         updateState = state

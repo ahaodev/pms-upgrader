@@ -8,7 +8,11 @@ data class UpdateCheckRequest(
     @SerialName("current_version")
     val currentVersion: String,
     @SerialName("client_info")
-    val clientInfo: String
+    val clientInfo: String,
+    @SerialName("project")
+    val project: String,
+    @SerialName("package")
+    val packageName: String,
 )
 
 @Serializable

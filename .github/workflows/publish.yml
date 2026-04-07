@@ -1,0 +1,67 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Write local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Build release AAR
+        run: ./gradlew :upgrader:assembleRelease --no-daemon
+
+      - name: Get tag version
+        id: version
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.TAG }}
+          name: ${{ steps.version.outputs.TAG }}
+          generate_release_notes: true
+          files: upgrader/build/outputs/aar/upgrader-release.aar
+
+      - name: Trigger JitPack build
+        run: |
+          TAG=${{ steps.version.outputs.TAG }}
+          OWNER=${{ github.repository_owner }}
+          REPO=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          echo "Triggering JitPack build for ${OWNER}/${REPO}:${TAG} ..."
+          curl -fsSL "https://jitpack.io/com/github/${OWNER}/${REPO}/${TAG}/build.log" \
+            -o /tmp/jitpack-build.log 2>/dev/null || true
+          cat /tmp/jitpack-build.log 2>/dev/null || true
+          echo ""
+          echo "✅ Done. Dependency to use:"
+          echo "   implementation(\"com.github.${OWNER}:${REPO}:${TAG}\")"

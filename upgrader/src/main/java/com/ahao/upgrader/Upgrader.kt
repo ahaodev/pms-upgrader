@@ -13,13 +13,23 @@ import retrofit2.awaitResponse
 import java.io.File
 import java.io.FileOutputStream
 
-class Upgrader(
+class Upgrader private constructor(
     private val context: Context,
-    private val baseUrl: String = Constants.DEFAULT_BASE_URL
+    private val accessToken: String,
+    private val baseUrl: String,
+    private val project: String,
+    private val packageName: String,
 ) {
     private val TAG = Upgrader::class.java.simpleName
-    private val updateApi = Service.createUpdateApi(baseUrl)
-    private val okHttpClient = OkHttpClient()
+    private val updateApi = Service.createUpdateApi(baseUrl, accessToken)
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("x-access-token", accessToken)
+                .build()
+            chain.proceed(request)
+        }
+        .build()
 
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
@@ -27,13 +37,18 @@ class Upgrader(
     /**
      * 检查更新
      */
-    suspend fun checkUpdate(currentVersionCode: String, clientInfo: String = Constants.DEFAULT_CLIENT_INFO) {
+    suspend fun checkUpdate(
+        currentVersionCode: String,
+        clientInfo: String = Constants.DEFAULT_CLIENT_INFO,
+    ) {
         _updateState.value = UpdateState.Checking
 
         try {
             val request = UpdateCheckRequest(
                 currentVersion = currentVersionCode,
-                clientInfo = clientInfo
+                clientInfo = clientInfo,
+                project = project,
+                packageName = packageName,
             )
 
             val response = updateApi.checkUpdate(request).awaitResponse()
@@ -64,7 +79,6 @@ class Upgrader(
         Log.d(TAG, downloadUrl)
         return withContext(Dispatchers.IO) {
             try {
-                // 清理旧文件
                 Utils.cleanOldApkFiles(context)
 
                 val downloadDir = Utils.getDownloadDir(context)
@@ -75,7 +89,6 @@ class Upgrader(
 
                 val request = Request.Builder()
                     .url(fullDownloadUrl)
-                    .addHeader("x-access-token", Constants.ACCESS_TOKEN)
                     .build()
 
                 val response = okHttpClient.newCall(request).execute()
@@ -116,9 +129,6 @@ class Upgrader(
                 }
 
                 Log.d(TAG, "APK下载完成: ${apkFile.absolutePath}")
-                Log.d(TAG, "下载文件大小: ${apkFile.length()} bytes")
-                Log.d(TAG, "下载文件是否存在: ${apkFile.exists()}")
-
                 _updateState.value = UpdateState.DownloadCompleted(apkFile.absolutePath)
                 apkFile.absolutePath
             } catch (e: Exception) {
@@ -159,15 +169,12 @@ class Upgrader(
     suspend fun performUpdate(
         currentVersion: String,
         clientInfo: String = Constants.DEFAULT_CLIENT_INFO,
-        autoInstall: Boolean = true
+        autoInstall: Boolean = true,
     ) {
-        // 1. 检查更新
         checkUpdate(currentVersion, clientInfo)
 
         val currentState = _updateState.value
-        if (currentState !is UpdateState.UpdateAvailable) {
-            return
-        }
+        if (currentState !is UpdateState.UpdateAvailable) return
 
         val updateResponse = currentState.response
         val downloadUrl = updateResponse.downloadUrl
@@ -177,21 +184,14 @@ class Upgrader(
             return
         }
 
-        // 2. 下载APK
-        val fileName = "msc_${updateResponse.latestVersion}_update.apk"
-        val filePath = downloadApk(downloadUrl, fileName)
+        val fileName = "${packageName}_${updateResponse.latestVersion}_update.apk"
+        val filePath = downloadApk(downloadUrl, fileName) ?: return
 
-        if (filePath == null) {
-            return
-        }
-
-        // 3. 验证文件
         if (!verifyApkFile(filePath, updateResponse.fileMd5)) {
             _updateState.value = UpdateState.Error("APK文件校验失败")
             return
         }
 
-        // 4. 自动安装（可选）
         if (autoInstall) {
             installApk(filePath)
         }
@@ -202,5 +202,25 @@ class Upgrader(
      */
     fun resetState() {
         _updateState.value = UpdateState.Idle
+    }
+
+    class Builder(private val context: Context) {
+        private var accessToken: String = ""
+        private var baseUrl: String = ""
+        private var project: String = ""
+        private var packageName: String = ""
+
+        fun accessToken(token: String) = apply { this.accessToken = token }
+        fun baseUrl(url: String) = apply { this.baseUrl = url }
+        fun project(project: String) = apply { this.project = project }
+        fun packageName(pkg: String) = apply { this.packageName = pkg }
+
+        fun build(): Upgrader {
+            require(accessToken.isNotEmpty()) { "accessToken must be provided" }
+            require(baseUrl.isNotEmpty()) { "baseUrl must be provided" }
+            require(project.isNotEmpty()) { "project must be provided" }
+            require(packageName.isNotEmpty()) { "packageName must be provided" }
+            return Upgrader(context, accessToken, baseUrl, project, packageName)
+        }
     }
 }
