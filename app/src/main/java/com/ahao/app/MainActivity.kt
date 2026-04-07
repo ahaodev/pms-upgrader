@@ -221,7 +221,9 @@ fun UpgraderTestScreen(
                         if (response.fileSize != null) {
                             Text("大小: ${response.fileSize} bytes", style = MaterialTheme.typography.bodySmall)
                         }
-                        Text("强制更新: ${if (response.forceUpdate) "是" else "否"}", style = MaterialTheme.typography.bodySmall)
+                        if (response.fileHash != null) {
+                            Text("Hash: ${response.fileHash}", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }

@@ -187,7 +187,7 @@ class Upgrader private constructor(
         val fileName = "${packageName}_${updateResponse.latestVersion}_update.apk"
         val filePath = downloadApk(downloadUrl, fileName) ?: return
 
-        if (!verifyApkFile(filePath, updateResponse.fileMd5)) {
+        if (!verifyApkFile(filePath, updateResponse.fileHash)) {
             _updateState.value = UpdateState.Error("APK文件校验失败")
             return
         }

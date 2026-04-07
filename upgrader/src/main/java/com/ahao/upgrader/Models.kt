@@ -9,28 +9,28 @@ data class UpdateCheckRequest(
     val currentVersion: String,
     @SerialName("client_info")
     val clientInfo: String,
-    @SerialName("project")
+    @SerialName("project_name")
     val project: String,
-    @SerialName("package")
+    @SerialName("package_name")
     val packageName: String,
 )
 
 @Serializable
 data class UpdateCheckResponse(
     @SerialName("has_update")
-    var hasUpdate: Boolean=false,
+    var hasUpdate: Boolean = false,
+    @SerialName("current_version")
+    val currentVersion: String? = null,
     @SerialName("latest_version")
     val latestVersion: String? = null,
     @SerialName("download_url")
     val downloadUrl: String? = null,
     @SerialName("changelog")
-    var changelog: String = "修复已知问题，优化用户体验",
-    @SerialName("force_update")
-    val forceUpdate: Boolean = false,
+    var changelog: String = "",
     @SerialName("file_size")
     val fileSize: Long? = null,
-    @SerialName("file_md5")
-    val fileMd5: String? = null
+    @SerialName("file_hash")
+    val fileHash: String? = null,
 )
 
 data class DownloadProgress(
