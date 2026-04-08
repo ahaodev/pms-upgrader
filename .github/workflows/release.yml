@@ -47,8 +47,8 @@ jobs:
           echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> local.properties
           echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> local.properties
 
-      - name: Build release AAR
-        run: ./gradlew :upgrader:assembleRelease --no-daemon
+      - name: Build signed release APK
+        run: ./gradlew :app:assembleRelease --no-daemon
 
       - name: Cleanup keystore
         if: always()
@@ -57,7 +57,7 @@ jobs:
       - name: Publish release
         uses: ahaodev/pms-releaser@main
         with:
-          file_path: './upgrader/build/outputs/aar/upgrader-release.aar'
+          file_path: './app/build/outputs/apk/release/app-release.apk'
           version: ${{ github.ref_name }}
           project_name: 'Test'
           package_name: 'debug'
