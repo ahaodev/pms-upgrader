@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Android 10+ (API 29+): context.externalCacheDir/downloads/ -->
+    <external-cache-path name="apk_cache_downloads" path="downloads/" />
+    <!-- Android 7-9 (API 24-28): public Downloads/MSC/ -->
+    <external-path name="apk_public_downloads" path="Download/MSC/" />
+    <!-- Android 7-9 fallback: app external files dir -->
+    <external-files-path name="apk_files_downloads" path="Download/downloads/" />
+</paths>

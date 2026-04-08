@@ -24,7 +24,7 @@ object ServerCreator {
 
 
         val trustedHostnames =
-            listOf("shyy-port.cn","47.92.144.106")
+            listOf("localhost","47.92.144.106")
 
         return OkHttpClient.Builder()
             .hostnameVerifier { hostname, session -> trustedHostnames.containsAll(trustedHostnames) }
