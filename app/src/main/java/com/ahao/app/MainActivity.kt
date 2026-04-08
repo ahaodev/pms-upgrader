@@ -44,6 +44,20 @@ fun UpgraderTestScreen(
     modifier: Modifier = Modifier,
     lifecycleScope: androidx.lifecycle.LifecycleCoroutineScope
 ) {
+    val appVersion = remember {
+        try {
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                info.longVersionCode
+            } else {
+                @Suppress("DEPRECATION") info.versionCode.toLong()
+            }
+            "v${info.versionName} ($versionCode)"
+        } catch (e: Exception) {
+            "unknown"
+        }
+    }
+
     var baseUrl by remember { mutableStateOf("") }
     var accessToken by remember { mutableStateOf("") }
     var projectName by remember { mutableStateOf("msc") }
@@ -69,6 +83,11 @@ fun UpgraderTestScreen(
         Text(
             text = "升级测试工具",
             style = MaterialTheme.typography.headlineMedium,
+        )
+        Text(
+            text = "当前版本: $appVersion",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
