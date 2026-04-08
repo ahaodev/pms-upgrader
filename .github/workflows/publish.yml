@@ -52,6 +52,10 @@ jobs:
       - name: Build signed release APK
         run: ./gradlew :app:assembleRelease --no-daemon
 
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f $RUNNER_TEMP/release.jks
+
       - name: Get tag version
         id: version
         run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT

@@ -50,6 +50,10 @@ jobs:
       - name: Build release AAR
         run: ./gradlew :upgrader:assembleRelease --no-daemon
 
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f $RUNNER_TEMP/release.jks
+
       - name: Publish release
         uses: ahaodev/pms-releaser@main
         with:
