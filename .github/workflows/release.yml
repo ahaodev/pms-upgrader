@@ -54,10 +54,16 @@ jobs:
         if: always()
         run: rm -f $RUNNER_TEMP/release.jks
 
+      - name: Find APK
+        id: find_apk
+        run: |
+          APK=$(find ./app/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "path=$APK" >> $GITHUB_OUTPUT
+
       - name: Publish release
         uses: ahaodev/pms-releaser@main
         with:
-          file_path: './app/build/outputs/apk/release/app-release.apk'
+          file_path: ${{ steps.find_apk.outputs.path }}
           version: ${{ github.ref_name }}
           project_name: 'Test'
           package_name: 'debug'
