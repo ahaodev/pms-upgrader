@@ -1,3 +1,6 @@
+import org.gradle.language.nativeplatform.internal.Dimensions.applicationVariants
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Properties
 
 plugins {
@@ -8,6 +11,11 @@ plugins {
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) load(f.inputStream())
+}
+fun Project.generateVersionCode(): Int {
+    return providers.exec {
+        commandLine("git", "rev-list", "--count", "HEAD")
+    }.standardOutput.asText.get().trim().toInt()
 }
 
 android {
@@ -22,8 +30,8 @@ android {
         applicationId = "com.ahao.upgrader"
         minSdk = 24
         targetSdk = 36
-        versionCode = 9999
-        versionName = "99999.0"
+        versionCode = generateVersionCode()
+        versionName = "v0.1.$versionCode"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -58,6 +66,19 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+
+}
+
+afterEvaluate {
+    val versionName = android.defaultConfig.versionName
+    tasks.named("packageRelease", com.android.build.gradle.tasks.PackageApplication::class) {
+        doLast {
+            val date = SimpleDateFormat("yyyyMMddHHmm").format(Date())
+            outputDirectory.get().asFile.listFiles()
+                ?.filter { it.name.endsWith(".apk") }
+                ?.forEach { apk -> apk.renameTo(File(apk.parentFile, "$versionName-$date.apk")) }
+        }
     }
 }
 
