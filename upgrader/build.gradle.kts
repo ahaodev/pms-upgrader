@@ -64,9 +64,19 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "com.github.YOUR_GITHUB_USERNAME"
+                groupId = "com.github.${System.getenv("GITHUB_REPOSITORY_OWNER") ?: "YOUR_GITHUB_USERNAME"}"
                 artifactId = "upgrader"
-                version = "1.0.0"
+                version = System.getenv("RELEASE_VERSION") ?: "1.0.0"
+            }
+        }
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/${System.getenv("GITHUB_REPOSITORY") ?: "owner/pmsupgrader"}")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR") ?: ""
+                    password = System.getenv("GITHUB_TOKEN") ?: ""
+                }
             }
         }
     }
